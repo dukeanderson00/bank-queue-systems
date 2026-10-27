@@ -1,0 +1,425 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Bank Queue Management System</title>
+<style>
+  body {
+    font-family: Arial, Helvetica, sans-serif;
+    font-size: 15px;
+    background: #f2f2f2;
+    color: #222;
+    margin: 0;
+  }
+  header {
+    background: #1a3a5c;
+    color: #fff;
+    padding: 16px 24px;
+  }
+  header h1 {
+    margin: 0;
+    font-size: 22px;
+  }
+  header p {
+    margin: 4px 0 0;
+    font-size: 13px;
+    color: #d5e0ec;
+  }
+  main {
+    max-width: 960px;
+    margin: 20px auto;
+    padding: 0 16px;
+  }
+  .row {
+    display: flex;
+    gap: 16px;
+    flex-wrap: wrap;
+  }
+  .box {
+    background: #fff;
+    border: 1px solid #c8c8c8;
+    padding: 14px 16px;
+    margin-bottom: 16px;
+    flex: 1 1 300px;
+  }
+  .box h2 {
+    margin: 0 0 12px;
+    font-size: 16px;
+    border-bottom: 1px solid #ddd;
+    padding-bottom: 6px;
+  }
+  label {
+    display: block;
+    margin: 8px 0 3px;
+    font-size: 14px;
+  }
+  input, select {
+    width: 100%;
+    padding: 7px;
+    font-size: 14px;
+    border: 1px solid #999;
+    box-sizing: border-box;
+  }
+  button {
+    padding: 8px 14px;
+    font-size: 14px;
+    border: 1px solid #1a3a5c;
+    background: #1a3a5c;
+    color: #fff;
+    cursor: pointer;
+    margin: 12px 6px 0 0;
+  }
+  button:hover {
+    background: #26527f;
+  }
+  button.light {
+    background: #fff;
+    color: #1a3a5c;
+  }
+  button.light:hover {
+    background: #e8eef5;
+  }
+  button.danger {
+    background: #fff;
+    color: #a30000;
+    border-color: #a30000;
+  }
+  #message {
+    background: #fff8d6;
+    border: 1px solid #d9c96a;
+    padding: 8px 12px;
+    margin-bottom: 16px;
+    min-height: 18px;
+  }
+  #serving {
+    border: 1px solid #ccc;
+    background: #fafafa;
+    padding: 12px;
+    min-height: 54px;
+  }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+  th, td {
+    border: 1px solid #ccc;
+    padding: 7px 9px;
+    text-align: left;
+    font-size: 14px;
+  }
+  th {
+    background: #e9eef4;
+  }
+  tr.first td {
+    background: #eaf5ea;
+  }
+  .stats td {
+    width: 50%;
+  }
+  #log {
+    max-height: 150px;
+    overflow-y: auto;
+    border: 1px solid #ddd;
+    padding: 6px 10px;
+    font-size: 13px;
+    background: #fafafa;
+  }
+  #log div {
+    padding: 2px 0;
+  }
+  footer {
+    text-align: center;
+    font-size: 12px;
+    color: #666;
+    padding: 10px 0 24px;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Bank Queue Management System</h1>
+  <p>Data Structures project: a queue (First-In, First-Out) implemented with a linked list</p>
+</header>
+
+<main>
+  <div id="message">Welcome. Enter a customer name and click Take Ticket.</div>
+
+  <div class="row">
+    <div class="box">
+      <h2>Customer Arrival (Enqueue)</h2>
+      <label for="name">Customer name</label>
+      <input type="text" id="name" maxlength="30">
+      <label for="service">Service needed</label>
+      <select id="service">
+        <option>Deposit</option>
+        <option>Withdrawal</option>
+        <option>Account Opening</option>
+        <option>Enquiry</option>
+      </select>
+      <button id="addBtn">Take Ticket</button>
+    </div>
+
+    <div class="box">
+      <h2>Teller Counter (Dequeue)</h2>
+      <div id="serving">No customer is being served.</div>
+      <button id="serveBtn">Serve Next Customer</button>
+      <button id="peekBtn" class="light">Peek (Who is next?)</button>
+    </div>
+  </div>
+
+  <div class="box">
+    <h2>Waiting Line</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>Position</th>
+          <th>Ticket No.</th>
+          <th>Name</th>
+          <th>Service</th>
+          <th>Waiting Time</th>
+        </tr>
+      </thead>
+      <tbody id="lineBody"></tbody>
+    </table>
+    <p style="font-size:13px;color:#555;margin:8px 0 0;">Position 1 is the FRONT of the queue and the last row is the REAR.</p>
+  </div>
+
+  <div class="row">
+    <div class="box">
+      <h2>Statistics</h2>
+      <table class="stats">
+        <tr><td>Tickets issued</td><td id="sIssued">0</td></tr>
+        <tr><td>Customers served</td><td id="sServed">0</td></tr>
+        <tr><td>Customers waiting</td><td id="sWaiting">0</td></tr>
+        <tr><td>Average waiting time</td><td id="sAvg">0 s</td></tr>
+      </table>
+      <button id="resetBtn" class="danger">Reset</button>
+    </div>
+
+    <div class="box">
+      <h2>Activity Record</h2>
+      <div id="log"></div>
+    </div>
+  </div>
+</main>
+
+<footer>Duke Owusu-Kwakye | Data Structures | University of Cape Coast</footer>
+
+<script>
+function Node(data) {
+  this.data = data;
+  this.next = null;
+}
+
+function LinkedQueue() {
+  this.front = null;
+  this.rear = null;
+  this.count = 0;
+}
+
+LinkedQueue.prototype.enqueue = function (item) {
+  var node = new Node(item);
+  if (this.rear === null) {
+    this.front = node;
+    this.rear = node;
+  } else {
+    this.rear.next = node;
+    this.rear = node;
+  }
+  this.count++;
+};
+
+LinkedQueue.prototype.dequeue = function () {
+  if (this.isEmpty()) {
+    return null;
+  }
+  var item = this.front.data;
+  this.front = this.front.next;
+  if (this.front === null) {
+    this.rear = null;
+  }
+  this.count--;
+  return item;
+};
+
+LinkedQueue.prototype.peek = function () {
+  if (this.isEmpty()) {
+    return null;
+  }
+  return this.front.data;
+};
+
+LinkedQueue.prototype.isEmpty = function () {
+  return this.count === 0;
+};
+
+LinkedQueue.prototype.size = function () {
+  return this.count;
+};
+
+LinkedQueue.prototype.toArray = function () {
+  var list = [];
+  var current = this.front;
+  while (current !== null) {
+    list.push(current.data);
+    current = current.next;
+  }
+  return list;
+};
+
+function Customer(ticket, name, service) {
+  this.ticket = ticket;
+  this.name = name;
+  this.service = service;
+  this.arrival = Date.now();
+}
+
+var queue = new LinkedQueue();
+var nextTicket = 1;
+var served = 0;
+var totalWait = 0;
+
+var nameInput = document.getElementById("name");
+var serviceSelect = document.getElementById("service");
+var messageBox = document.getElementById("message");
+var servingBox = document.getElementById("serving");
+var lineBody = document.getElementById("lineBody");
+var logBox = document.getElementById("log");
+
+function safe(text) {
+  var d = document.createElement("div");
+  d.textContent = text;
+  return d.innerHTML;
+}
+
+function seconds(ms) {
+  var s = Math.floor(ms / 1000);
+  if (s < 60) {
+    return s + " s";
+  }
+  return Math.floor(s / 60) + " min " + (s % 60) + " s";
+}
+
+function say(text) {
+  messageBox.textContent = text;
+}
+
+function record(text) {
+  var now = new Date();
+  var t = now.toLocaleTimeString();
+  var row = document.createElement("div");
+  row.textContent = t + " - " + text;
+  logBox.insertBefore(row, logBox.firstChild);
+}
+
+function showLine() {
+  var people = queue.toArray();
+  var html = "";
+  if (people.length === 0) {
+    html = '<tr><td colspan="5">Nobody is waiting.</td></tr>';
+  } else {
+    for (var i = 0; i < people.length; i++) {
+      var c = people[i];
+      html +=
+        "<tr" + (i === 0 ? ' class="first"' : "") + ">" +
+        "<td>" + (i + 1) + "</td>" +
+        "<td>" + c.ticket + "</td>" +
+        "<td>" + safe(c.name) + "</td>" +
+        "<td>" + safe(c.service) + "</td>" +
+        '<td class="wait" data-t="' + c.arrival + '">' + seconds(Date.now() - c.arrival) + "</td>" +
+        "</tr>";
+    }
+  }
+  lineBody.innerHTML = html;
+}
+
+function showStats() {
+  document.getElementById("sIssued").textContent = nextTicket - 1;
+  document.getElementById("sServed").textContent = served;
+  document.getElementById("sWaiting").textContent = queue.size();
+  document.getElementById("sAvg").textContent = served > 0 ? seconds(totalWait / served) : "0 s";
+}
+
+function refresh() {
+  showLine();
+  showStats();
+}
+
+function takeTicket() {
+  var name = nameInput.value.trim();
+  if (name === "") {
+    say("Please enter the customer's name first.");
+    nameInput.focus();
+    return;
+  }
+  var c = new Customer(nextTicket, name, serviceSelect.value);
+  nextTicket++;
+  var ahead = queue.size();
+  queue.enqueue(c);
+  nameInput.value = "";
+  nameInput.focus();
+  say("Ticket " + c.ticket + " issued to " + c.name + ". People ahead: " + ahead + ".");
+  record("Ticket " + c.ticket + " (" + c.name + ", " + c.service + ") joined the queue.");
+  refresh();
+}
+
+function serveNext() {
+  var c = queue.dequeue();
+  if (c === null) {
+    say("There is nobody in the queue to serve.");
+    return;
+  }
+  var waited = Date.now() - c.arrival;
+  totalWait += waited;
+  served++;
+  servingBox.innerHTML =
+    "Now serving: <b>Ticket " + c.ticket + " - " + safe(c.name) + "</b><br>" +
+    "Service: " + safe(c.service) + "<br>Waited: " + seconds(waited);
+  say("Ticket " + c.ticket + " (" + c.name + ") has been called to the counter.");
+  record("Ticket " + c.ticket + " (" + c.name + ") was served after " + seconds(waited) + ".");
+  refresh();
+}
+
+function peekNext() {
+  var c = queue.peek();
+  if (c === null) {
+    say("The queue is empty.");
+    return;
+  }
+  say("Next in line: Ticket " + c.ticket + " - " + c.name + " (" + c.service + ").");
+}
+
+function resetAll() {
+  queue = new LinkedQueue();
+  nextTicket = 1;
+  served = 0;
+  totalWait = 0;
+  servingBox.textContent = "No customer is being served.";
+  logBox.innerHTML = "";
+  say("The system has been reset.");
+  refresh();
+}
+
+document.getElementById("addBtn").onclick = takeTicket;
+document.getElementById("serveBtn").onclick = serveNext;
+document.getElementById("peekBtn").onclick = peekNext;
+document.getElementById("resetBtn").onclick = resetAll;
+nameInput.onkeydown = function (e) {
+  if (e.key === "Enter") {
+    takeTicket();
+  }
+};
+
+setInterval(function () {
+  var cells = document.querySelectorAll("td.wait");
+  for (var i = 0; i < cells.length; i++) {
+    cells[i].textContent = seconds(Date.now() - Number(cells[i].getAttribute("data-t")));
+  }
+}, 1000);
+
+refresh();
+</script>
+</body>
+</html>
